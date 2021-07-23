@@ -44,16 +44,18 @@
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
-TIM_HandleTypeDef htim2;
+
 /* USER CODE BEGIN PV */
 extern CAN_FilterTypeDef sFilterConfig;
 uint32_t cann = 0;
 
 volatile uint32_t can1;
 volatile uint32_t can2;
+volatile uint32_t can_count_RX;
+volatile uint32_t can_count_RX_zero;
 uint8_t dis2;
 CAN_FilterTypeDef sFilterConfig;
-CAN_TxHeaderTypeDef can_TX_Header;
+CAN_TxHeaderTypeDef can_TX_ID0;
 CAN_RxHeaderTypeDef can_RX_Header;
 uint32_t TxMailbox;
 uint8_t canRXData[8];
@@ -113,6 +115,7 @@ int main(void)
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
+  uint32_t time = 0;
   while (1)
   {
     /* USER CODE END WHILE */
@@ -126,7 +129,10 @@ int main(void)
 		  		HAL_GPIO_WritePin(TRIG_GPIO_Port, TRIG_Pin, GPIO_PIN_RESET);
 
 		  		//2. Wait for ECHO pin rising edge
-		  		while(HAL_GPIO_ReadPin(ECHO_GPIO_Port, ECHO_Pin) == GPIO_PIN_RESET);
+		  		time = HAL_GetTick();
+		  		while(HAL_GPIO_ReadPin(ECHO_GPIO_Port, ECHO_Pin) == GPIO_PIN_RESET){
+		  			if (HAL_GetTick() - time > 2000) break;
+		  		}
 
 		  		//3. Start measuring ECHO pulse width in usec
 		  		numTicks = 0;
@@ -142,7 +148,7 @@ int main(void)
 		  		//5. Print to UART terminal for debugging
 		  		//sprintf(uartBuf, "Distance (cm)  = %.1f\r\n", distance);
 		  	//	HAL_UART_Transmit(&huart2, (uint8_t *)uartBuf, strlen(uartBuf), 100);
-		  		dis2 = (uint8_t)distance;
+		  		CAN_RX();
 		  		HAL_Delay(100);
 
   }

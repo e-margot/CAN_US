@@ -22,13 +22,16 @@
 
 /* USER CODE BEGIN 0 */
 CAN_FilterTypeDef sFilterConfig;
-CAN_TxHeaderTypeDef can_TX_Header;
+CAN_TxHeaderTypeDef can_TX_ID0;
 CAN_RxHeaderTypeDef can_RX_Header;
 uint32_t TxMailbox;
 const uint32_t filter_id = 0x0000;
-const uint32_t header_id = 0xA;
+const uint32_t header_id = 0xE;
 extern volatile uint32_t can1;
 extern volatile uint32_t can2;
+extern volatile uint32_t can_count_RX;
+extern volatile uint32_t can_count_RX_zero;
+uint8_t RxData[8] = {0,};
 /* USER CODE END 0 */
 
 CAN_HandleTypeDef hcan;
@@ -48,8 +51,8 @@ void MX_CAN_Init(void)
   hcan.Init.Prescaler = 6;
   hcan.Init.Mode = CAN_MODE_NORMAL;
   hcan.Init.SyncJumpWidth = CAN_SJW_1TQ;
-  hcan.Init.TimeSeg1 = CAN_BS1_6TQ;
-  hcan.Init.TimeSeg2 = CAN_BS2_1TQ;
+  hcan.Init.TimeSeg1 = CAN_BS1_13TQ;
+  hcan.Init.TimeSeg2 = CAN_BS2_2TQ;
   hcan.Init.TimeTriggeredMode = DISABLE;
   hcan.Init.AutoBusOff = DISABLE;
   hcan.Init.AutoWakeUp = DISABLE;
@@ -132,18 +135,36 @@ void CAN_Init(void) {
 	HAL_CAN_ConfigFilter(&hcan, &sFilterConfig);
 	HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
 
-	can_TX_Header.DLC = 1;
-	can_TX_Header.IDE = CAN_ID_STD;
-	can_TX_Header.RTR = CAN_RTR_DATA;
-	can_TX_Header.StdId = header_id;
+	can_TX_ID0.DLC = 1;
+	can_TX_ID0.IDE = CAN_ID_STD;
+	can_TX_ID0.RTR = CAN_RTR_DATA;
+	can_TX_ID0.StdId = header_id;
 }
 void CAN_Send_Data(float val) {
 
 	can1++;
 	uint8_t can_data = (uint8_t)val;
-	if(HAL_CAN_AddTxMessage(&hcan, &can_TX_Header, &can_data, &TxMailbox) == HAL_OK) {
+	if(HAL_CAN_AddTxMessage(&hcan, &can_TX_ID0, &can_data, &TxMailbox) == HAL_OK) {
 		can2++;
 	}
+}
+void CAN_RX(){
+	   if(HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &can_RX_Header, RxData) == HAL_OK)
+	    {
+	        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+	        can_count_RX++;
+	    }
+	    else {can_count_RX_zero++;}
+}
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
+
+    if(HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &can_RX_Header, RxData) == HAL_OK)
+    {
+        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
+        can_count_RX++;
+    }
+    else {can_count_RX_zero++;}
 }
 /* USER CODE END 1 */
 

@@ -41,6 +41,8 @@ void MX_CAN_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 void CAN_Send_Data(float val);
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan);
+void CAN_RX();
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus
